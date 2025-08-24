@@ -9,13 +9,13 @@ app.use(cors());
 app.use(express.json());
 
 // --- Database Connection ---
-mongoose.connect('mongodb://localhost:27017/vegetableDB', {
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/vegetableDB', {
     useNewUrlParser: true,
     useUnifiedTopology: true,
 }).then(() => console.log("Successfully connected to MongoDB."))
   .catch(err => console.error("Connection error", err));
 
-const JWT_SECRET = 'your-super-secret-key-that-is-long-and-secure';
+const JWT_SECRET = process.env.JWT_SECRET || 'f5b14e6e6b2cabd51ddbd9bebb9b663c';
 
 // --- Mongoose Schemas ---
 const vegetableSchema = new mongoose.Schema({
@@ -150,5 +150,5 @@ app.delete('/api/admin/delete/:id', authenticateToken, async (req, res) => {
 });
 
 // --- Server Start ---
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
