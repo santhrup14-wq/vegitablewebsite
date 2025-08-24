@@ -8,6 +8,29 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// --- Environment Variables (Reading from process.env) ---
+const MONGODB_URI = process.env.MONGODB_URI;
+const JWT_SECRET = process.env.JWT_SECRET;
+const PORT = process.env.PORT || 5000;
+const NODE_ENV = process.env.NODE_ENV || 'production';
+
+// Check if required environment variables are set
+if (!MONGODB_URI) {
+    console.error('MONGODB_URI environment variable is not set!');
+    process.exit(1);
+}
+
+if (!JWT_SECRET) {
+    console.error('JWT_SECRET environment variable is not set!');
+    process.exit(1);
+}
+
+console.log('Environment variables loaded:');
+console.log('- MONGODB_URI:', MONGODB_URI ? 'Set' : 'Not set');
+console.log('- JWT_SECRET:', JWT_SECRET ? 'Set' : 'Not set');
+console.log('- NODE_ENV:', NODE_ENV);
+console.log('- PORT:', PORT);
+
 // --- Database Connection ---
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/vegetableDB', {
     useNewUrlParser: true,
