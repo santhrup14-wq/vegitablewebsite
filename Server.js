@@ -1,6 +1,3 @@
-// Load environment variables at the very top (optional for production)
-// require('dotenv').config();
-
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -13,7 +10,6 @@ app.use(express.json());
 
 // --- Environment Variables (Reading from process.env) ---
 const MONGODB_URI = process.env.MONGODB_URI;
-const JWT_SECRET = process.env.JWT_SECRET;
 const PORT = process.env.PORT || 5000;
 const NODE_ENV = process.env.NODE_ENV || 'production';
 
@@ -23,14 +19,8 @@ if (!MONGODB_URI) {
     process.exit(1);
 }
 
-if (!JWT_SECRET) {
-    console.error('JWT_SECRET environment variable is not set!');
-    process.exit(1);
-}
-
 console.log('Environment variables loaded:');
 console.log('- MONGODB_URI:', MONGODB_URI ? 'Set' : 'Not set');
-console.log('- JWT_SECRET:', JWT_SECRET ? 'Set' : 'Not set');
 console.log('- NODE_ENV:', NODE_ENV);
 console.log('- PORT:', PORT);
 
@@ -71,7 +61,7 @@ const authenticateToken = (req, res, next) => {
     const token = authHeader && authHeader.split(' ')[1];
     if (token == null) return res.sendStatus(401);
     
-    jwt.verify(token, JWT_SECRET, (err, user) => {
+    jwt.verify(token,             process.env.JWT_SECRET, (err, user) => {
         if (err) return res.sendStatus(403);
         req.user = user;
         next();
