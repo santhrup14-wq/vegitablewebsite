@@ -77,6 +77,47 @@ app.get('/health', (req, res) => {
     });
 });
 
+// --- Debug Route for Database ---
+app.get('/api/debug', async (req, res) => {
+    try {
+        const collections = await mongoose.connection.db.listCollections().toArray();
+        const collectionNames = collections.map(c => c.name);
+        
+        const vegetableCount = await Vegetable.countDocuments();
+        const sampleVegetables = await Vegetable.find().limit(3);
+        
+        res.json({
+            status: 'Database Connected',
+            collections: collectionNames,
+            vegetableCount,
+            sampleVegetables
+        });
+    } catch (error) {
+        console.error("Debug route error:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// --- Test Route to Add Sample Data ---
+app.get('/api/test-add', async (req, res) => {
+    try {
+        const testVegetable = new Vegetable({
+            name: 'Tomato',
+            district: 'Chennai',
+            market: 'Koyambedu',
+            highPrice: 50,
+            lowPrice: 30,
+            date: '2024-08-24'
+        });
+        
+        await testVegetable.save();
+        res.json({ message: 'Test data added successfully', data: testVegetable });
+    } catch (error) {
+        console.error("Test add error:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // --- API Routes ---
 // Get all districts and their markets
 app.get('/api/markets', async (req, res) => {
@@ -99,17 +140,30 @@ app.get('/api/markets', async (req, res) => {
 // Get dropdown data for forms
 app.get('/api/dropdown-data', async (req, res) => {
     try {
+        // Debug: Check total document count
+        const totalCount = await Vegetable.countDocuments();
+        console.log(`Total documents in vegetables collection: ${totalCount}`);
+        
+        // Debug: Get a sample document
+        const sampleDoc = await Vegetable.findOne();
+        console.log('Sample document:', sampleDoc);
+        
         const vegetables = await Vegetable.distinct('name').sort();
+        console.log('Distinct vegetables found:', vegetables);
+        
         const pipeline = [
             { $group: { _id: "$district", markets: { $addToSet: "$market" } } }
         ];
         const result = await Vegetable.aggregate(pipeline);
+        console.log('Aggregation result:', result);
+        
         const districtMarkets = result.reduce((acc, item) => {
             if (item._id) { 
                 acc[item._id] = item.markets.sort(); 
             }
             return acc;
         }, {});
+        
         res.json({ vegetables, districtMarkets });
     } catch (error) {
         console.error("Error fetching dropdown data:", error);
