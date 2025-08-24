@@ -1,9 +1,9 @@
 {
   "name": "vegetable-market-api",
   "version": "1.0.0",
-  "main": "server.js",
+  "main": "Server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node Server.js"
   },
   
   "dependencies": {
