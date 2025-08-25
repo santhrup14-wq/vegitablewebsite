@@ -10,6 +10,7 @@ app.use(express.json());
 
 // --- Environment Variables (Reading from process.env) ---
 const MONGODB_URI = process.env.MONGODB_URI;
+const JWT_SECRET = process.env.JWT_SECRET;
 const PORT = process.env.PORT || 5000;
 const NODE_ENV = process.env.NODE_ENV || 'production';
 
@@ -19,8 +20,14 @@ if (!MONGODB_URI) {
     process.exit(1);
 }
 
+if (!JWT_SECRET) {
+    console.error('JWT_SECRET environment variable is not set!');
+    process.exit(1);
+}
+
 console.log('Environment variables loaded:');
 console.log('- MONGODB_URI:', MONGODB_URI ? 'Set' : 'Not set');
+console.log('- JWT_SECRET:', JWT_SECRET ? 'Set' : 'Not set');
 console.log('- NODE_ENV:', NODE_ENV);
 console.log('- PORT:', PORT);
 
@@ -61,7 +68,7 @@ const authenticateToken = (req, res, next) => {
     const token = authHeader && authHeader.split(' ')[1];
     if (token == null) return res.sendStatus(401);
     
-    jwt.verify(token,             process.env.JWT_SECRET, (err, user) => {
+    jwt.verify(token, JWT_SECRET, (err, user) => { // Fixed: now using defined JWT_SECRET
         if (err) return res.sendStatus(403);
         req.user = user;
         next();
@@ -207,9 +214,21 @@ app.post('/api/auth/register', async (req, res) => {
 app.post('/api/auth/login', async (req, res) => {
     try {
         const { username, password } = req.body;
+        
+        console.log('Login attempt:', { username }); // Debug log
+        
         const user = await User.findOne({ username });
         
-        if (!user || !(await bcrypt.compare(password, user.password))) {
+        if (!user) {
+            console.log('User not found:', username); // Debug log
+            return res.status(400).json({ message: "Invalid credentials." });
+        }
+        
+        const passwordMatch = await bcrypt.compare(password, user.password);
+        console.log('Password match:', passwordMatch); // Debug log
+        
+        if (!passwordMatch) {
+            console.log('Password mismatch for user:', username); // Debug log
             return res.status(400).json({ message: "Invalid credentials." });
         }
         
@@ -220,9 +239,11 @@ app.post('/api/auth/login', async (req, res) => {
                 district: user.district, 
                 market: user.market 
             },
-            JWT_SECRET, 
+            JWT_SECRET, // Now properly defined
             { expiresIn: '24h' }
         );
+        
+        console.log('Login successful for user:', username); // Debug log
         
         res.json({ 
             token,
